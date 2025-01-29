@@ -10,6 +10,7 @@ import com.example.restful.entity.Contact;
 import com.example.restful.entity.User;
 import com.example.restful.model.ContactReponse;
 import com.example.restful.model.CreateContactRequest;
+import com.example.restful.model.UpdateContactRequest;
 import com.example.restful.repository.ContactRepository;
 
 @Service
@@ -56,6 +57,22 @@ public class ContactService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact not found"));
 
         return toContactReponse(contact);
+    }
+
+    public ContactReponse update(User user, UpdateContactRequest request){
+        validationService.validate(request);
+
+        Contact contact = contactRepository.findFirstByUserAndId(user, request.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact not found"));
+        
+        contact.setFirstName(request.getFirstName());
+        contact.setLastName(request.getLastName());
+        contact.setEmail(request.getEmail());
+        contact.setPhone(request.getPhone());
+        contactRepository.save(contact);
+
+        return toContactReponse(contact);
+    
     }
 
 }

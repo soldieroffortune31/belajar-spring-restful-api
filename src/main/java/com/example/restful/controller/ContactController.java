@@ -5,12 +5,14 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.restful.entity.User;
 import com.example.restful.model.ContactReponse;
 import com.example.restful.model.CreateContactRequest;
+import com.example.restful.model.UpdateContactRequest;
 import com.example.restful.model.WebResponse;
 import com.example.restful.service.ContactService;
 
@@ -35,6 +37,19 @@ public class ContactController {
     )
     public WebResponse<ContactReponse> get(User user, @PathVariable("contactId") Integer contactId){
         ContactReponse contactReponse = contactService.get(user, contactId);
+        return WebResponse.<ContactReponse>builder().data(contactReponse).build();
+    }
+
+    @PutMapping(
+        path = "/api/contacts/{contactId}",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<ContactReponse> update(User user, @RequestBody UpdateContactRequest request, @PathVariable("contactId") Integer contactId){
+        
+        request.setId(contactId);
+        
+        ContactReponse contactReponse = contactService.update(user, request);
         return WebResponse.<ContactReponse>builder().data(contactReponse).build();
     }
 

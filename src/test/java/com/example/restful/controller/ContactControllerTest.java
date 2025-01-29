@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
@@ -171,6 +172,75 @@ public class ContactControllerTest {
             assertEquals(contact.getLastName(), response.getData().getLastName());
             assertEquals(contact.getEmail(), response.getData().getEmail());
             assertEquals(contact.getPhone(), response.getData().getPhone());
+        });
+
+    }
+
+    @Test
+    void testUpdateContactBadRequest() throws JsonProcessingException, Exception {
+        
+        CreateContactRequest request = new CreateContactRequest();
+        request.setFirstName("");
+        request.setEmail("salah");
+
+        mockMvc.perform(
+            put("/api/contacts/1234")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isBadRequest()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+
+    }
+
+    @Test
+    void testUpdateContactSuccess() throws JsonProcessingException, Exception {
+        User user = userRepository.findById("test").orElse(null);
+        assertNotNull(user);
+
+        Contact contact = new Contact();
+        contact.setUser(user);
+        contact.setFirstName("Aliefsufi Uzan");
+        contact.setLastName("Kafil Ardi");
+        contact.setEmail("uzan310596@gmail.com");
+        contact.setPhone("085231728421");
+        contactRepository.save(contact);
+
+        CreateContactRequest request = new CreateContactRequest();
+        request.setFirstName("Aliefsufi");
+        request.setLastName("Uzan");
+        request.setEmail("uzan310596@gmail.com");
+        request.setPhone("085231728421");
+
+
+        mockMvc.perform(
+            put("/api/contacts/" + contact.getId())
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<ContactReponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<ContactReponse>>() {
+            });
+
+            assertNull(response.getErrors());
+            assertEquals(request.getFirstName(), response.getData().getFirstName());
+            assertEquals(request.getLastName(), response.getData().getLastName());
+            assertEquals(request.getEmail(), response.getData().getEmail());
+            assertEquals(request.getPhone(), response.getData().getPhone());
+
+            List<Contact> contacts = contactRepository.findAll();
+            assertEquals(1, contacts.size());
+
         });
 
     }
