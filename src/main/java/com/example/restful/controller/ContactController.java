@@ -2,6 +2,8 @@ package com.example.restful.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +27,14 @@ public class ContactController {
     )
     public WebResponse<ContactReponse> create(User user, @RequestBody CreateContactRequest request){
         ContactReponse contactReponse = contactService.create(user, request);
+        return WebResponse.<ContactReponse>builder().data(contactReponse).build();
+    }
+
+    @GetMapping(
+        path = "/api/contacts/{contactId}"
+    )
+    public WebResponse<ContactReponse> get(User user, @PathVariable("contactId") Integer contactId){
+        ContactReponse contactReponse = contactService.get(user, contactId);
         return WebResponse.<ContactReponse>builder().data(contactReponse).build();
     }
 
