@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.restful.entity.User;
 import com.example.restful.model.RegisterUserRequest;
+import com.example.restful.model.UpdateUserRequest;
 import com.example.restful.model.UserResponse;
 import com.example.restful.model.WebResponse;
 import com.example.restful.repository.UserRepository;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 // import static org.springframework.test.web.servlet.MockMvcBuilder.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -204,6 +206,64 @@ public class UserControllerTest {
             });
 
             assertNotNull(response.getErrors());
+
+        });
+    }
+
+    @Test
+    void updateUserUnauthorized() throws Exception{
+        UpdateUserRequest request = new UpdateUserRequest();
+
+        mockMvc.perform(
+            patch("/api/users/current")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
+            });
+
+            assertNotNull(response.getErrors());
+
+        });
+    }
+
+    @Test
+    void updateUserSuccess() throws Exception{
+
+        User user = new User();
+        user.setUsername("test");
+        user.setPassword(BCrypt.hashpw("rahasia", BCrypt.gensalt()));
+        user.setName("test");
+        user.setToken("test");
+        user.setTokenExpiredAt(System.currentTimeMillis() + 1000000000000L);
+        userRepository.save(user);
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("Alief");
+        request.setPassword("310596");
+
+        mockMvc.perform(
+            patch("/api/users/current")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<UserResponse>>() {
+            });
+
+            assertNull(response.getErrors());
+            assertEquals("Alief", response.getData().getName());
+            assertEquals("test", response.getData().getUsername());
+
+            User userDb = userRepository.findById("test").orElse(null);
+            assertNotNull(userDb);
+            assertTrue(BCrypt.checkpw("310596", userDb.getPassword()));
 
         });
     }
