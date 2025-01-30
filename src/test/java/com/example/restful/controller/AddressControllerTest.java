@@ -3,8 +3,10 @@ package com.example.restful.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import com.example.restful.entity.Contact;
 import com.example.restful.entity.User;
 import com.example.restful.model.AddressResponse;
 import com.example.restful.model.CreateAddressRequest;
+import com.example.restful.model.UpdateAddressRequest;
 import com.example.restful.model.WebResponse;
 import com.example.restful.repository.AddressRepository;
 import com.example.restful.repository.ContactRepository;
@@ -187,6 +190,127 @@ public class AddressControllerTest {
             assertEquals(address.getProvince(), response.getData().getProvince());
             assertEquals(address.getCountry(), response.getData().getCountry());
             assertEquals(address.getPostalCode(), response.getData().getPostalCode());
+        });
+
+    }
+
+    @Test
+    void updateAddressBadRequest() throws JsonProcessingException, Exception {
+
+        UpdateAddressRequest request = new UpdateAddressRequest();
+        request.setCountry("");
+
+        mockMvc.perform(
+            put("/api/contacts/1/addresses/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isBadRequest()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {                
+            });
+
+            assertNotNull(response.getErrors());
+
+        });
+
+    }
+
+    @Test
+    void updateAddressSuccess() throws JsonProcessingException, Exception {
+        Contact contact = contactRepository.findById(contactId).orElse(null);
+        assertNotNull(contact);
+
+        Address address = new Address();
+        address.setStreet("Lama");
+        address.setCity("Lama");
+        address.setProvince("Jawa Timur Lama");
+        address.setCountry("Indonesia Lama");
+        address.setPostalCode("67281");
+        address.setContact(contact);
+
+        addressRepository.save(address);
+
+        UpdateAddressRequest request = new UpdateAddressRequest();
+        request.setContactId(contactId);
+        request.setStreet("Rondokuning");
+        request.setCity("Probolinggo");
+        request.setProvince("Jawa Timur");
+        request.setCountry("Indonesia");
+        request.setPostalCode("67282");
+
+        mockMvc.perform(
+            put("/api/contacts/"+contactId+"/addresses/"+address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<AddressResponse>>() {                
+            });
+
+            assertNull(response.getErrors());
+            assertEquals(request.getStreet(), response.getData().getStreet());
+            assertEquals(request.getCity(), response.getData().getCity());
+            assertEquals(request.getProvince(), response.getData().getProvince());
+            assertEquals(request.getCountry(), response.getData().getCountry());
+            assertEquals(request.getPostalCode(), response.getData().getPostalCode());
+        });
+
+    }
+
+    @Test
+    void deleteAddressNotFound() throws JsonProcessingException, Exception {
+        mockMvc.perform(
+            delete("/api/contacts/1/addresses/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {                
+            });
+
+            assertNotNull(response.getErrors());
+
+        });
+
+    }
+
+    @Test
+    void deleteAddressSuccess() throws JsonProcessingException, Exception {
+
+        Contact contact = contactRepository.findById(contactId).orElse(null);
+        assertNotNull(contact);
+
+        Address address = new Address();
+        address.setStreet("Rondokuning");
+        address.setCity("Probolinggo");
+        address.setProvince("Jawa Timur");
+        address.setCountry("Indonesia");
+        address.setPostalCode("67282");
+        address.setContact(contact);
+
+        addressRepository.save(address);
+
+        mockMvc.perform(
+            delete("/api/contacts/"+contactId+"/addresses/"+address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {                
+            });
+
+            assertNull(response.getErrors());
+            assertEquals("OK", response.getData());
         });
 
     }

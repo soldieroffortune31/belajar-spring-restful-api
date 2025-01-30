@@ -11,6 +11,7 @@ import com.example.restful.entity.Contact;
 import com.example.restful.entity.User;
 import com.example.restful.model.AddressResponse;
 import com.example.restful.model.CreateAddressRequest;
+import com.example.restful.model.UpdateAddressRequest;
 import com.example.restful.repository.AddressRepository;
 import com.example.restful.repository.ContactRepository;
 
@@ -68,6 +69,44 @@ public class AddressService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address is not Found"));
 
         return toAddressResponse(address);
+    }
+
+    @Transactional
+    public AddressResponse update(
+        User user,
+        UpdateAddressRequest request
+    ){ 
+        
+        validationService.validate(request);
+
+        Contact contact = contactRepository.findFirstByUserAndId(user, request.getContactId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact is not found"));
+
+        Address address = addressRepository.findFirstByContactAndId(contact, request.getAddressId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address is not Found"));
+        
+        address.setStreet(request.getStreet());
+        address.setCity(request.getCity());
+        address.setProvince(request.getProvince());
+        address.setCountry(request.getCountry());
+        address.setPostalCode(request.getPostalCode());
+        addressRepository.save(address);
+
+        return toAddressResponse(address);
+    }
+
+    @Transactional
+    public void remove(User user, Integer contactId, Integer addressId){
+
+        Contact contact = contactRepository.findFirstByUserAndId(user, contactId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact is not found"));
+
+        Address address = addressRepository.findFirstByContactAndId(contact, addressId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address is not Found"));
+
+        
+        addressRepository.delete(address);
+
     }
 
 
