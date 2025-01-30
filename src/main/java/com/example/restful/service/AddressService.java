@@ -1,5 +1,7 @@
 package com.example.restful.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -107,6 +109,16 @@ public class AddressService {
         
         addressRepository.delete(address);
 
+    }
+
+    @Transactional(readOnly = true)
+    public List<AddressResponse> list(User user, Integer contactId){
+        Contact contact = contactRepository.findFirstByUserAndId(user, contactId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact is not found"));
+
+        List<Address> addresses = addressRepository.findAllByContact(contact);
+
+        return addresses.stream().map(address -> toAddressResponse(address)).toList();
     }
 
 
