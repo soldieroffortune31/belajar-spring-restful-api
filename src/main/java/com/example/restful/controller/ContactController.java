@@ -2,6 +2,7 @@ package com.example.restful.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,7 +34,8 @@ public class ContactController {
     }
 
     @GetMapping(
-        path = "/api/contacts/{contactId}"
+        path = "/api/contacts/{contactId}",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     public WebResponse<ContactReponse> get(User user, @PathVariable("contactId") Integer contactId){
         ContactReponse contactReponse = contactService.get(user, contactId);
@@ -51,6 +53,15 @@ public class ContactController {
         
         ContactReponse contactReponse = contactService.update(user, request);
         return WebResponse.<ContactReponse>builder().data(contactReponse).build();
+    }
+
+    @DeleteMapping(
+        path = "/api/contacts/{contactId}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<String> delete(User user, @PathVariable("contactId") Integer contactId){
+        contactService.delete(user, contactId);
+        return WebResponse.<String>builder().data("OK").build();
     }
 
 }

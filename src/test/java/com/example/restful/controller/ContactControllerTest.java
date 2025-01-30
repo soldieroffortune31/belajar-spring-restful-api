@@ -3,6 +3,7 @@ package com.example.restful.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -241,6 +242,57 @@ public class ContactControllerTest {
             List<Contact> contacts = contactRepository.findAll();
             assertEquals(1, contacts.size());
 
+        });
+
+    }
+
+    @Test
+    void deleteContactNotFound() throws JsonProcessingException, Exception {
+        
+        mockMvc.perform(
+            delete("/api/contacts/78778787")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+
+    }
+
+    @Test
+    void deleteContactSuccess() throws JsonProcessingException, Exception {
+        
+        User user = userRepository.findById("test").orElse(null);
+        assertNotNull(user);
+
+        Contact contact = new Contact();
+        contact.setUser(user);
+        contact.setFirstName("Aliefsufi Uzan");
+        contact.setLastName("Kafil Ardi");
+        contact.setEmail("uzan310596@gmail.com");
+        contact.setPhone("085231728421");
+
+        contactRepository.save(contact);
+
+        mockMvc.perform(
+            delete("/api/contacts/" + contact.getId())
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
+            });
+
+            assertNull(response.getErrors());
+            assertEquals("OK", response.getData());
         });
 
     }

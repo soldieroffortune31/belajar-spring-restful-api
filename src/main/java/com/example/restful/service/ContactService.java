@@ -59,6 +59,7 @@ public class ContactService {
         return toContactReponse(contact);
     }
 
+    @Transactional
     public ContactReponse update(User user, UpdateContactRequest request){
         validationService.validate(request);
 
@@ -73,6 +74,15 @@ public class ContactService {
 
         return toContactReponse(contact);
     
+    }
+
+    @Transactional
+    public void delete(User user, Integer contactId){
+
+        Contact contact = contactRepository.findFirstByUserAndId(user, contactId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact not found"));
+        
+        contactRepository.delete(contact);
     }
 
 }
