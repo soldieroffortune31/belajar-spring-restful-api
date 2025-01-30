@@ -3,6 +3,7 @@ package com.example.restful.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.example.restful.entity.Address;
 import com.example.restful.entity.Contact;
 import com.example.restful.entity.User;
 import com.example.restful.model.AddressResponse;
@@ -128,6 +130,63 @@ public class AddressControllerTest {
             assertEquals(request.getProvince(), response.getData().getProvince());
             assertEquals(request.getCountry(), response.getData().getCountry());
             assertEquals(request.getPostalCode(), response.getData().getPostalCode());
+        });
+
+    }
+
+    @Test
+    void getAddressNotFound() throws JsonProcessingException, Exception {
+        mockMvc.perform(
+            get("/api/contacts/1/addresses/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {                
+            });
+
+            assertNotNull(response.getErrors());
+
+        });
+
+    }
+
+    @Test
+    void getAddressSuccess() throws JsonProcessingException, Exception {
+
+        Contact contact = contactRepository.findById(contactId).orElse(null);
+        assertNotNull(contact);
+
+        Address address = new Address();
+        address.setStreet("Rondokuning");
+        address.setCity("Probolinggo");
+        address.setProvince("Jawa Timur");
+        address.setCountry("Indonesia");
+        address.setPostalCode("67282");
+        address.setContact(contact);
+
+        addressRepository.save(address);
+
+        mockMvc.perform(
+            get("/api/contacts/"+contactId+"/addresses/"+address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "test")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<AddressResponse>>() {                
+            });
+
+            assertNull(response.getErrors());
+            assertEquals(address.getId(), response.getData().getId());
+            assertEquals(address.getStreet(), response.getData().getStreet());
+            assertEquals(address.getCity(), response.getData().getCity());
+            assertEquals(address.getProvince(), response.getData().getProvince());
+            assertEquals(address.getCountry(), response.getData().getCountry());
+            assertEquals(address.getPostalCode(), response.getData().getPostalCode());
         });
 
     }
